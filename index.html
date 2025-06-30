@@ -491,7 +491,7 @@
                         'Bay Area': { lat: 37.8272, lon: -122.2913 },
                         'Los Angeles': { lat: 34.0522, lon: -118.2437 },
                         'Central Coast': { lat: 35.3738, lon: -120.8509 },
-                        'Inland Empire': { lat: 34.0633, lon: -117.6509 },
+                        'Inland Empire': { lat: 34.0396, lon: -116.9742 }, // Centered around Yucaipa
                         'San Diego': { lat: 32.7157, lon: -117.1611 },
                         'Sacramento': { lat: 38.5816, lon: -121.4944 },
                         'Washington State': { lat: 47.7511, lon: -120.7401 },
@@ -515,7 +515,7 @@
                                     color: [0, 0, 0],
                                     haloColor: [255, 255, 255],
                                     haloSize: "2px",
-                                    text: `${regionName}\n${count} students`,
+                                    text: `${regionName}\n${count} ${count === 1 ? 'student' : 'students'}`,
                                     font: {
                                         size: "14px",
                                         family: "Arial",
