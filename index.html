@@ -139,7 +139,7 @@
             "esri/layers/GraphicsLayer",
             "esri/geometry/Polygon",
             "esri/PopupTemplate"
-        ], function(Map, MapView, Graphic, PopupTemplate, GraphicsLayer, Polygon) {
+        ], function(Map, MapView, Graphic, GraphicsLayer, Polygon, PopupTemplate) {
             
             // Create map
             const map = new Map({
@@ -261,8 +261,7 @@
             // Add regional boundaries to map
             regionBoundaries.forEach(region => {
                 const polygon = new Polygon({
-                    rings: region.coordinates,
-                    spatialReference: { wkid: 4326 }
+                    rings: region.coordinates
                 });
                 
                 const popupTemplate = new PopupTemplate({
