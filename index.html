@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Summer School Student Locations - Regional Boundaries</title>
+    <title>Summer School Student Locations - California Counties</title>
     <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css">
     <script src="https://js.arcgis.com/4.29/"></script>
     <style>
@@ -53,6 +53,7 @@
         .color-medium { background-color: rgba(52, 152, 219, 0.7); }
         .color-low { background-color: rgba(46, 204, 113, 0.7); }
         .color-international { background-color: rgba(155, 89, 182, 0.7); }
+        .color-none { background-color: rgba(200, 200, 200, 0.3); }
         
         #stats {
             position: absolute;
@@ -90,11 +91,24 @@
             z-index: 1000;
             display: none;
         }
+
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
     </style>
 </head>
 <body>
     <div id="mapDiv"></div>
     <div id="tooltip"></div>
+    <div id="loading">Loading map data...</div>
     
     <div id="legend">
         <div class="legend-title">Student Distribution</div>
@@ -118,17 +132,21 @@
             <div class="legend-symbol color-international"></div>
             <span>International</span>
         </div>
+        <div class="legend-item">
+            <div class="legend-symbol color-none"></div>
+            <span>No Students</span>
+        </div>
     </div>
     
     <div id="stats">
         <div class="stats-title">Summary Statistics</div>
-        <div class="stats-item"><strong>Total Students:</strong> 31</div>
-        <div class="stats-item"><strong>California:</strong> 26 (83.9%)</div>
-        <div class="stats-item"><strong>Bay Area:</strong> 12 (38.7%)</div>
-        <div class="stats-item"><strong>Los Angeles:</strong> 7 (22.6%)</div>
-        <div class="stats-item"><strong>Other States:</strong> 4 (12.9%)</div>
-        <div class="stats-item"><strong>International:</strong> 1 (3.2%)</div>
-        <div class="stats-item"><strong>Total Regions:</strong> 10</div>
+        <div class="stats-item"><strong>Total Students:</strong> <span id="total-students">Loading...</span></div>
+        <div class="stats-item"><strong>California:</strong> <span id="ca-students">Loading...</span></div>
+        <div class="stats-item"><strong>Bay Area:</strong> <span id="bay-area-students">Loading...</span></div>
+        <div class="stats-item"><strong>Los Angeles:</strong> <span id="la-students">Loading...</span></div>
+        <div class="stats-item"><strong>Other States:</strong> <span id="other-states">Loading...</span></div>
+        <div class="stats-item"><strong>International:</strong> <span id="international">Loading...</span></div>
+        <div class="stats-item"><strong>Total Regions:</strong> <span id="total-regions">Loading...</span></div>
     </div>
 
     <script>
@@ -154,54 +172,54 @@
                 zoom: 5
             });
             
-            // Create graphics layer
-            const graphicsLayer = new GraphicsLayer();
-            map.add(graphicsLayer);
+            // Create graphics layers
+            const californiaLayer = new GraphicsLayer();
+            const statesLayer = new GraphicsLayer();
+            map.add(californiaLayer);
+            map.add(statesLayer);
 
-            // Regional boundary data with approximate coordinates
-            const regionBoundaries = [
-                {
-                    name: "Bay Area",
-                    state: "CA",
-                    students: 12,
-                    coordinates: [
-                        [[-123.5, 38.5], [-121.5, 38.5], [-121.5, 37.2], [-122.8, 36.8], [-123.5, 37.8], [-123.5, 38.5]]]
-                },
-                {
-                    name: "Los Angeles",
-                    state: "CA", 
-                    students: 7,
-                    coordinates: [
-                        [[-119.5, 34.8], [-117.0, 34.8], [-117.0, 33.2], [-119.5, 33.2], [-119.5, 34.8]]]
-                },
-                {
-                    name: "Central Coast",
-                    state: "CA",
-                    students: 2,
-                    coordinates: [
-                        [[-122.8, 36.8], [-119.5, 36.8], [-119.5, 34.8], [-122.0, 34.0], [-122.8, 35.5], [-122.8, 36.8]]]
-                },
-                {
-                    name: "Inland Empire", 
-                    state: "CA",
-                    students: 2,
-                    coordinates: [
-                        [[-117.0, 34.8], [-116.0, 34.8], [-116.0, 33.2], [-117.0, 33.2], [-117.0, 34.8]]]
-                },
-                {
-                    name: "San Diego",
-                    state: "CA",
-                    students: 2,
-                    coordinates: [
-                        [[-118.0, 33.2], [-116.0, 33.2], [-116.0, 32.0], [-118.0, 32.0], [-118.0, 33.2]]]
-                },
-                {
-                    name: "Sacramento",
-                    state: "CA", 
-                    students: 1,
-                    coordinates: [
-                        [[-122.5, 39.5], [-120.5, 39.5], [-120.5, 37.8], [-122.5, 37.8], [-122.5, 39.5]]]
-                },
+            // Regional mapping for California counties
+            const countyToRegion = {
+                // Bay Area
+                'San Francisco': 'Bay Area',
+                'Alameda': 'Bay Area',
+                'Contra Costa': 'Bay Area',
+                'Marin': 'Bay Area',
+                'Napa': 'Bay Area',
+                'San Mateo': 'Bay Area',
+                'Santa Clara': 'Bay Area',
+                'Solano': 'Bay Area',
+                'Sonoma': 'Bay Area',
+                
+                // Los Angeles
+                'Los Angeles': 'Los Angeles',
+                
+                // Central Coast
+                'Monterey': 'Central Coast',
+                'San Luis Obispo': 'Central Coast',
+                'Santa Barbara': 'Central Coast',
+                'Santa Cruz': 'Central Coast',
+                'San Benito': 'Central Coast',
+                
+                // Inland Empire
+                'Riverside': 'Inland Empire',
+                'San Bernardino': 'Inland Empire',
+                
+                // San Diego
+                'San Diego': 'San Diego',
+                'Imperial': 'San Diego',
+                
+                // Sacramento
+                'Sacramento': 'Sacramento',
+                'Placer': 'Sacramento',
+                'El Dorado': 'Sacramento',
+                'Yolo': 'Sacramento',
+                'Sutter': 'Sacramento',
+                'Yuba': 'Sacramento'
+            };
+
+            // State boundaries (approximate)
+            const stateBoundaries = [
                 {
                     name: "Washington State",
                     state: "WA",
@@ -232,11 +250,11 @@
                 }
             ];
 
-            // Function to get fill color and opacity based on student count
-            function getFillSymbol(students, state) {
+            // Function to get fill color based on student count
+            function getFillSymbol(students, isInternational = false) {
                 let color;
                 
-                if (state === "Mexico") {
+                if (isInternational) {
                     color = [155, 89, 182, 0.7]; // Purple for international
                 } else if (students >= 10) {
                     color = [231, 76, 60, 0.7]; // Red for very high count
@@ -244,8 +262,10 @@
                     color = [243, 156, 18, 0.7]; // Orange for high count  
                 } else if (students >= 2) {
                     color = [52, 152, 219, 0.7]; // Blue for medium count
-                } else {
+                } else if (students >= 1) {
                     color = [46, 204, 113, 0.7]; // Green for single student
+                } else {
+                    color = [200, 200, 200, 0.3]; // Gray for no students
                 }
                 
                 return {
@@ -253,44 +273,160 @@
                     color: color,
                     outline: {
                         color: [255, 255, 255],
-                        width: 2
+                        width: 1
                     }
                 };
             }
 
-            // Add regional boundaries to map
-            regionBoundaries.forEach(region => {
-                const polygon = new Polygon({
-                    rings: region.coordinates
-                });
-                
-                const popupTemplate = new PopupTemplate({
-                    title: `${region.name}${region.state !== 'CA' ? ', ' + region.state : ''}`,
-                    content: `
-                        <div style="padding: 10px;">
-                            <p><strong>Students:</strong> ${region.students}</p>
-                            <p><strong>Region:</strong> ${region.name}${region.state !== 'CA' ? ', ' + region.state : ''}</p>
-                            <p><strong>Percentage:</strong> ${((region.students / 31) * 100).toFixed(1)}% of total</p>
-                            ${region.state === "CA" ? '<p><em>California region</em></p>' : ''}
-                            ${region.state === "Mexico" ? '<p><em>International students</em></p>' : ''}
-                            ${region.name === "Bay Area" ? '<p><em>Largest regional concentration</em></p>' : ''}
-                        </div>
-                    `
-                });
-                
-                const graphic = new Graphic({
-                    geometry: polygon,
-                    symbol: getFillSymbol(region.students, region.state),
-                    popupTemplate: popupTemplate,
-                    attributes: {
-                        name: region.name,
-                        state: region.state,
-                        students: region.students
+            // Load data and create map
+            async function loadMapData() {
+                try {
+                    // Load student data
+                    const csvResponse = await fetch('https://raw.githubusercontent.com/pluricalifornia/studentlocation/main/data/Summer%20School%20Locations.csv');
+                    const csvText = await csvResponse.text();
+                    
+                    // Parse CSV data
+                    const lines = csvText.split('\n').filter(line => line.trim());
+                    const studentData = [];
+                    for (let i = 1; i < lines.length; i++) {
+                        const [city, state] = lines[i].split(',').map(s => s.trim().replace(/"/g, ''));
+                        if (city && state) {
+                            studentData.push({ city, state });
+                        }
                     }
-                });
-                
-                graphicsLayer.add(graphic);
-            });
+
+                    // Count students by region
+                    const regionCounts = {};
+                    studentData.forEach(student => {
+                        const region = `${student.city}, ${student.state}`;
+                        regionCounts[region] = (regionCounts[region] || 0) + 1;
+                    });
+
+                    // Load California counties GeoJSON
+                    const geoResponse = await fetch('https://raw.githubusercontent.com/pluricalifornia/studentlocation/main/data/CA_Counties.geojson');
+                    const geoData = await geoResponse.json();
+
+                    // Group California counties by region and count students
+                    const caRegionCounts = {
+                        'Bay Area': 0,
+                        'Los Angeles': 0,
+                        'Central Coast': 0,
+                        'Inland Empire': 0,
+                        'San Diego': 0,
+                        'Sacramento': 0
+                    };
+
+                    // Count students by California region
+                    Object.entries(regionCounts).forEach(([region, count]) => {
+                        if (region.includes(', CA')) {
+                            const cityName = region.split(', ')[0];
+                            if (cityName === 'Bay Area') caRegionCounts['Bay Area'] += count;
+                            else if (cityName === 'Los Angeles') caRegionCounts['Los Angeles'] += count;
+                            else if (cityName === 'Central Coast') caRegionCounts['Central Coast'] += count;
+                            else if (cityName === 'Inland Empire') caRegionCounts['Inland Empire'] += count;
+                            else if (cityName === 'San Diego') caRegionCounts['San Diego'] += count;
+                            else if (cityName === 'Sacramento') caRegionCounts['Sacramento'] += count;
+                        }
+                    });
+
+                    // Add California counties to map
+                    geoData.features.forEach(feature => {
+                        const countyName = feature.properties.NAME;
+                        const regionName = countyToRegion[countyName] || 'Other';
+                        const studentCount = caRegionCounts[regionName] || 0;
+
+                        // Convert GeoJSON coordinates to ArcGIS Polygon
+                        const rings = feature.geometry.coordinates.map(ring => 
+                            ring.map(coord => [coord[0], coord[1]])
+                        );
+
+                        const polygon = new Polygon({
+                            rings: rings
+                        });
+
+                        const popupTemplate = new PopupTemplate({
+                            title: `${countyName} County`,
+                            content: `
+                                <div style="padding: 10px;">
+                                    <p><strong>County:</strong> ${countyName}</p>
+                                    <p><strong>Region:</strong> ${regionName}</p>
+                                    <p><strong>Students in Region:</strong> ${studentCount}</p>
+                                    <p><strong>Percentage:</strong> ${((studentCount / studentData.length) * 100).toFixed(1)}% of total</p>
+                                </div>
+                            `
+                        });
+
+                        const graphic = new Graphic({
+                            geometry: polygon,
+                            symbol: getFillSymbol(studentCount),
+                            popupTemplate: popupTemplate,
+                            attributes: {
+                                name: countyName,
+                                region: regionName,
+                                students: studentCount
+                            }
+                        });
+
+                        californiaLayer.add(graphic);
+                    });
+
+                    // Add state boundaries
+                    stateBoundaries.forEach(boundary => {
+                        const studentCount = regionCounts[`${boundary.name}, ${boundary.state}`] || 0;
+                        
+                        const polygon = new Polygon({
+                            rings: boundary.coordinates
+                        });
+
+                        const popupTemplate = new PopupTemplate({
+                            title: `${boundary.name}${boundary.state !== 'Mexico' ? ', ' + boundary.state : ''}`,
+                            content: `
+                                <div style="padding: 10px;">
+                                    <p><strong>Students:</strong> ${studentCount}</p>
+                                    <p><strong>Location:</strong> ${boundary.name}${boundary.state !== 'Mexico' ? ', ' + boundary.state : ''}</p>
+                                    <p><strong>Percentage:</strong> ${((studentCount / studentData.length) * 100).toFixed(1)}% of total</p>
+                                    ${boundary.state === "Mexico" ? '<p><em>International students</em></p>' : ''}
+                                </div>
+                            `
+                        });
+
+                        const graphic = new Graphic({
+                            geometry: polygon,
+                            symbol: getFillSymbol(studentCount, boundary.state === 'Mexico'),
+                            popupTemplate: popupTemplate,
+                            attributes: {
+                                name: boundary.name,
+                                state: boundary.state,
+                                students: studentCount
+                            }
+                        });
+
+                        statesLayer.add(graphic);
+                    });
+
+                    // Update statistics
+                    const caStudents = Object.values(caRegionCounts).reduce((a, b) => a + b, 0);
+                    const otherStates = Object.values(regionCounts).reduce((sum, count, index, arr) => {
+                        const key = Object.keys(regionCounts)[index];
+                        return key.includes(', CA') ? sum : sum + count;
+                    }, 0) - (regionCounts['Mexico City, Mexico'] || 0);
+                    
+                    document.getElementById('total-students').textContent = studentData.length;
+                    document.getElementById('ca-students').textContent = `${caStudents} (${((caStudents/studentData.length)*100).toFixed(1)}%)`;
+                    document.getElementById('bay-area-students').textContent = `${caRegionCounts['Bay Area']} (${((caRegionCounts['Bay Area']/studentData.length)*100).toFixed(1)}%)`;
+                    document.getElementById('la-students').textContent = `${caRegionCounts['Los Angeles']} (${((caRegionCounts['Los Angeles']/studentData.length)*100).toFixed(1)}%)`;
+                    document.getElementById('other-states').textContent = `${otherStates} (${((otherStates/studentData.length)*100).toFixed(1)}%)`;
+                    document.getElementById('international').textContent = `${regionCounts['Mexico City, Mexico'] || 0} (${(((regionCounts['Mexico City, Mexico'] || 0)/studentData.length)*100).toFixed(1)}%)`;
+                    document.getElementById('total-regions').textContent = Object.keys(regionCounts).length;
+
+                    // Hide loading indicator
+                    document.getElementById('loading').style.display = 'none';
+
+                } catch (error) {
+                    console.error('Error loading data:', error);
+                    document.getElementById('loading').innerHTML = 'Error loading data. Please check the GitHub repository.';
+                }
+            }
 
             // Add hover effects
             let tooltip = document.getElementById('tooltip');
@@ -299,14 +435,25 @@
                 view.hitTest(event).then(function(response) {
                     if (response.results.length > 0) {
                         const graphic = response.results[0].graphic;
-                        if (graphic && graphic.attributes && graphic.attributes.name) {
+                        if (graphic && graphic.attributes) {
                             tooltip.style.display = 'block';
                             tooltip.style.left = event.x + 10 + 'px';
                             tooltip.style.top = event.y - 30 + 'px';
-                            tooltip.innerHTML = `
-                                <strong>${graphic.attributes.name}</strong><br>
-                                ${graphic.attributes.students} student${graphic.attributes.students > 1 ? 's' : ''}
-                            `;
+                            
+                            if (graphic.attributes.region) {
+                                // California county
+                                tooltip.innerHTML = `
+                                    <strong>${graphic.attributes.name} County</strong><br>
+                                    Region: ${graphic.attributes.region}<br>
+                                    ${graphic.attributes.students} student${graphic.attributes.students !== 1 ? 's' : ''} in region
+                                `;
+                            } else {
+                                // State/international
+                                tooltip.innerHTML = `
+                                    <strong>${graphic.attributes.name}</strong><br>
+                                    ${graphic.attributes.students} student${graphic.attributes.students !== 1 ? 's' : ''}
+                                `;
+                            }
                             view.container.style.cursor = 'pointer';
                         }
                     } else {
@@ -320,11 +467,15 @@
                 tooltip.style.display = 'none';
                 view.container.style.cursor = 'default';
             });
-            
-            // Adjust view to show all regions
+
+            // Initialize map
             view.when(() => {
-                view.goTo(graphicsLayer.graphics, {
-                    duration: 2000
+                loadMapData().then(() => {
+                    // Adjust view to show California
+                    view.goTo({
+                        center: [-119, 37],
+                        zoom: 6
+                    });
                 });
             });
         });
