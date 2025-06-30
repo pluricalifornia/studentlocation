@@ -48,12 +48,17 @@
             border: 1px solid #333;
         }
         
-        .color-very-high { background-color: rgba(231, 76, 60, 0.7); }
-        .color-high { background-color: rgba(243, 156, 18, 0.7); }
-        .color-medium { background-color: rgba(52, 152, 219, 0.7); }
-        .color-low { background-color: rgba(46, 204, 113, 0.7); }
-        .color-international { background-color: rgba(155, 89, 182, 0.7); }
-        .color-none { background-color: rgba(200, 200, 200, 0.3); }
+        .color-bay-area { background-color: rgba(231, 76, 60, 0.7); }
+        .color-los-angeles { background-color: rgba(243, 156, 18, 0.7); }
+        .color-central-coast { background-color: rgba(52, 152, 219, 0.7); }
+        .color-inland-empire { background-color: rgba(46, 204, 113, 0.7); }
+        .color-san-diego { background-color: rgba(155, 89, 182, 0.7); }
+        .color-sacramento { background-color: rgba(255, 193, 7, 0.7); }
+        .color-washington { background-color: rgba(108, 117, 125, 0.7); }
+        .color-colorado { background-color: rgba(220, 53, 69, 0.7); }
+        .color-dc { background-color: rgba(23, 162, 184, 0.7); }
+        .color-mexico { background-color: rgba(138, 43, 226, 0.7); }
+        .color-other { background-color: rgba(200, 200, 200, 0.3); }
         
         #stats {
             position: absolute;
@@ -111,30 +116,50 @@
     <div id="loading">Loading map data...</div>
     
     <div id="legend">
-        <div class="legend-title">Student Distribution</div>
+        <div class="legend-title">Regions</div>
         <div class="legend-item">
-            <div class="legend-symbol color-very-high"></div>
-            <span>10+ Students</span>
+            <div class="legend-symbol color-bay-area"></div>
+            <span>Bay Area</span>
         </div>
         <div class="legend-item">
-            <div class="legend-symbol color-high"></div>
-            <span>5-9 Students</span>
+            <div class="legend-symbol color-los-angeles"></div>
+            <span>Los Angeles</span>
         </div>
         <div class="legend-item">
-            <div class="legend-symbol color-medium"></div>
-            <span>2-4 Students</span>
+            <div class="legend-symbol color-central-coast"></div>
+            <span>Central Coast</span>
         </div>
         <div class="legend-item">
-            <div class="legend-symbol color-low"></div>
-            <span>1 Student</span>
+            <div class="legend-symbol color-inland-empire"></div>
+            <span>Inland Empire</span>
         </div>
         <div class="legend-item">
-            <div class="legend-symbol color-international"></div>
-            <span>International</span>
+            <div class="legend-symbol color-san-diego"></div>
+            <span>San Diego</span>
         </div>
         <div class="legend-item">
-            <div class="legend-symbol color-none"></div>
-            <span>No Students</span>
+            <div class="legend-symbol color-sacramento"></div>
+            <span>Sacramento</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-symbol color-washington"></div>
+            <span>Washington State</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-symbol color-colorado"></div>
+            <span>Colorado</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-symbol color-dc"></div>
+            <span>Washington D.C.</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-symbol color-mexico"></div>
+            <span>Mexico</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-symbol color-other"></div>
+            <span>Other Counties</span>
         </div>
     </div>
     
@@ -156,8 +181,9 @@
             "esri/Graphic",
             "esri/layers/GraphicsLayer",
             "esri/geometry/Polygon",
+            "esri/geometry/Point",
             "esri/PopupTemplate"
-        ], function(Map, MapView, Graphic, GraphicsLayer, Polygon, PopupTemplate) {
+        ], function(Map, MapView, Graphic, GraphicsLayer, Polygon, Point, PopupTemplate) {
             
             // Create map
             const map = new Map({
@@ -175,8 +201,10 @@
             // Create graphics layers
             const californiaLayer = new GraphicsLayer();
             const statesLayer = new GraphicsLayer();
+            const labelsLayer = new GraphicsLayer();
             map.add(californiaLayer);
             map.add(statesLayer);
+            map.add(labelsLayer);
 
             // Regional mapping for California counties
             const countyToRegion = {
@@ -210,8 +238,7 @@
                 'San Diego': 'San Diego',
                 
                 // Sacramento
-                'Sacramento': 'Sacramento',
-            
+                'Sacramento': 'Sacramento'
             };
 
             // State boundaries (approximate)
@@ -246,22 +273,43 @@
                 }
             ];
 
-            // Function to get fill color based on student count
-            function getFillSymbol(students, isInternational = false) {
+            // Function to get fill color based on region
+            function getFillSymbol(regionName) {
                 let color;
                 
-                if (isInternational) {
-                    color = [155, 89, 182, 0.7]; // Purple for international
-                } else if (students >= 10) {
-                    color = [231, 76, 60, 0.7]; // Red for very high count
-                } else if (students >= 5) {
-                    color = [243, 156, 18, 0.7]; // Orange for high count  
-                } else if (students >= 2) {
-                    color = [52, 152, 219, 0.7]; // Blue for medium count
-                } else if (students >= 1) {
-                    color = [46, 204, 113, 0.7]; // Green for single student
-                } else {
-                    color = [200, 200, 200, 0.3]; // Gray for no students
+                switch(regionName) {
+                    case 'Bay Area':
+                        color = [231, 76, 60, 0.7]; // Red
+                        break;
+                    case 'Los Angeles':
+                        color = [243, 156, 18, 0.7]; // Orange
+                        break;
+                    case 'Central Coast':
+                        color = [52, 152, 219, 0.7]; // Blue
+                        break;
+                    case 'Inland Empire':
+                        color = [46, 204, 113, 0.7]; // Green
+                        break;
+                    case 'San Diego':
+                        color = [155, 89, 182, 0.7]; // Purple
+                        break;
+                    case 'Sacramento':
+                        color = [255, 193, 7, 0.7]; // Yellow
+                        break;
+                    case 'Washington State':
+                        color = [108, 117, 125, 0.7]; // Gray
+                        break;
+                    case 'Colorado State':
+                        color = [220, 53, 69, 0.7]; // Dark Red
+                        break;
+                    case 'Washington':
+                        color = [23, 162, 184, 0.7]; // Teal
+                        break;
+                    case 'Mexico City':
+                        color = [138, 43, 226, 0.7]; // Blue Violet
+                        break;
+                    default:
+                        color = [200, 200, 200, 0.3]; // Light Gray for other counties
                 }
                 
                 return {
@@ -377,7 +425,7 @@
 
                         const graphic = new Graphic({
                             geometry: polygon,
-                            symbol: getFillSymbol(studentCount),
+                            symbol: getFillSymbol(regionName),
                             popupTemplate: popupTemplate,
                             attributes: {
                                 name: countyName,
@@ -411,7 +459,7 @@
 
                         const graphic = new Graphic({
                             geometry: polygon,
-                            symbol: getFillSymbol(studentCount, boundary.state === 'Mexico'),
+                            symbol: getFillSymbol(boundary.name === 'Mexico City' ? 'Mexico City' : boundary.name === 'Colorado State' ? 'Colorado State' : boundary.name === 'Washington' ? 'Washington' : 'Washington State'),
                             popupTemplate: popupTemplate,
                             attributes: {
                                 name: boundary.name,
@@ -437,6 +485,81 @@
                     document.getElementById('other-states').textContent = `${otherStates} (${((otherStates/studentData.length)*100).toFixed(1)}%)`;
                     document.getElementById('international').textContent = `${regionCounts['Mexico City, Mexico'] || 0} (${(((regionCounts['Mexico City, Mexico'] || 0)/studentData.length)*100).toFixed(1)}%)`;
                     document.getElementById('total-regions').textContent = Object.keys(regionCounts).length;
+
+                    // Add region labels
+                    const regionCenters = {
+                        'Bay Area': { lat: 37.8272, lon: -122.2913 },
+                        'Los Angeles': { lat: 34.0522, lon: -118.2437 },
+                        'Central Coast': { lat: 35.3738, lon: -120.8509 },
+                        'Inland Empire': { lat: 34.0633, lon: -117.6509 },
+                        'San Diego': { lat: 32.7157, lon: -117.1611 },
+                        'Sacramento': { lat: 38.5816, lon: -121.4944 },
+                        'Washington State': { lat: 47.7511, lon: -120.7401 },
+                        'Colorado State': { lat: 39.5501, lon: -105.7821 },
+                        'Washington': { lat: 38.9072, lon: -77.0369 },
+                        'Mexico City': { lat: 19.4326, lon: -99.1332 }
+                    };
+
+                    Object.entries(caRegionCounts).forEach(([regionName, count]) => {
+                        if (count > 0 && regionCenters[regionName]) {
+                            const center = regionCenters[regionName];
+                            const point = new Point({
+                                longitude: center.lon,
+                                latitude: center.lat
+                            });
+
+                            const labelGraphic = new Graphic({
+                                geometry: point,
+                                symbol: {
+                                    type: "text",
+                                    color: [0, 0, 0],
+                                    haloColor: [255, 255, 255],
+                                    haloSize: "2px",
+                                    text: `${regionName}\n${count} students`,
+                                    font: {
+                                        size: "14px",
+                                        family: "Arial",
+                                        weight: "bold"
+                                    }
+                                }
+                            });
+
+                            labelsLayer.add(labelGraphic);
+                        }
+                    });
+
+                    // Add labels for other states/countries
+                    stateBoundaries.forEach(boundary => {
+                        const studentCount = regionCounts[`${boundary.name}, ${boundary.state}`] || 0;
+                        if (studentCount > 0 && regionCenters[boundary.name] || regionCenters[boundary.name === 'Mexico City' ? 'Mexico City' : boundary.name]) {
+                            const centerKey = boundary.name === 'Mexico City' ? 'Mexico City' : boundary.name;
+                            const center = regionCenters[centerKey];
+                            if (center) {
+                                const point = new Point({
+                                    longitude: center.lon,
+                                    latitude: center.lat
+                                });
+
+                                const labelGraphic = new Graphic({
+                                    geometry: point,
+                                    symbol: {
+                                        type: "text",
+                                        color: [0, 0, 0],
+                                        haloColor: [255, 255, 255],
+                                        haloSize: "2px",
+                                        text: `${boundary.name}${boundary.state !== 'Mexico' ? ', ' + boundary.state : ''}\n${studentCount} student${studentCount !== 1 ? 's' : ''}`,
+                                        font: {
+                                            size: "14px",
+                                            family: "Arial",
+                                            weight: "bold"
+                                        }
+                                    }
+                                });
+
+                                labelsLayer.add(labelGraphic);
+                            }
+                        }
+                    });
 
                     // Hide loading indicator
                     document.getElementById('loading').style.display = 'none';
