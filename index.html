@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Summer School Student Locations</title>
+    <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css">
+    <script src="https://js.arcgis.com/4.29/"></script>
+    <style>
+        html, body, #mapDiv {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            width: 100%;
+            font-family: Arial, sans-serif;
+        }
+        
+        #legend {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 100;
+            max-width: 250px;
+        }
+        
+        .legend-title {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 14px;
+        }
+        
+        .legend-symbol {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 8px;
+            border: 2px solid #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        
+        .symbol-large { background-color: #e74c3c; }
+        .symbol-medium { background-color: #f39c12; }
+        .symbol-small { background-color: #3498db; }
+        .symbol-international { background-color: #9b59b6; }
+        
+        #stats {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 100;
+            max-width: 300px;
+        }
+        
+        .stats-title {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .stats-item {
+            font-size: 14px;
+            margin: 5px 0;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div id="mapDiv"></div>
+    
+    <div id="legend">
+        <div class="legend-title">Student Distribution</div>
+        <div class="legend-item">
+            <div class="legend-symbol symbol-large"></div>
+            <span>4+ Students</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-symbol symbol-medium"></div>
+            <span>2-3 Students</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-symbol symbol-small"></div>
+            <span>1 Student</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-symbol symbol-international"></div>
+            <span>International</span>
+        </div>
+    </div>
+    
+    <div id="stats">
+        <div class="stats-title">Summary Statistics</div>
+        <div class="stats-item"><strong>Total Students:</strong> 31</div>
+        <div class="stats-item"><strong>California:</strong> 26 (83.9%)</div>
+        <div class="stats-item"><strong>Other States:</strong> 4 (12.9%)</div>
+        <div class="stats-item"><strong>International:</strong> 1 (3.2%)</div>
+        <div class="stats-item"><strong>Total Cities:</strong> 20</div>
+    </div>
+
+    <script>
+        require([
+            "esri/Map",
+            "esri/views/MapView",
+            "esri/Graphic",
+            "esri/layers/GraphicsLayer",
+            "esri/geometry/Point",
+            "esri/PopupTemplate"
+        ], function(Map, MapView, Graphic, GraphicsLayer, Point, PopupTemplate) {
+            
+            // Create map
+            const map = new Map({
+                basemap: "streets-navigation-vector"
+            });
+            
+            // Create map view
+            const view = new MapView({
+                container: "mapDiv",
+                map: map,
+                center: [-119, 37], // Center on California
+                zoom: 6
+            });
+            
+            // Create graphics layer
+            const graphicsLayer = new GraphicsLayer();
+            map.add(graphicsLayer);
+            
+            // Location data based on our analysis
+            const locations = [
+                // Major California cities
+                { name: "Los Angeles", state: "CA", students: 6, lat: 34.0522, lon: -118.2437 },
+                { name: "San Francisco", state: "CA", students: 5, lat: 37.7749, lon: -122.4194 },
+                { name: "Bay Area", state: "CA", students: 3, lat: 37.8272, lon: -122.2913 },
+                { name: "Oakland", state: "CA", students: 2, lat: 37.8044, lon: -122.2712 },
+                { name: "San Diego", state: "CA", students: 2, lat: 32.7157, lon: -117.1611 },
+                
+                // Other California cities
+                { name: "Long Beach", state: "CA", students: 1, lat: 33.7701, lon: -118.1937 },
+                { name: "Santa Barbara", state: "CA", students: 1, lat: 34.4208, lon: -119.6982 },
+                { name: "Pinole", state: "CA", students: 1, lat: 37.9940, lon: -122.2986 },
+                { name: "Coachella", state: "CA", students: 1, lat: 33.6803, lon: -116.1739 },
+                { name: "San Rafael", state: "CA", students: 1, lat: 37.9735, lon: -122.5311 },
+                { name: "Monterey", state: "CA", students: 1, lat: 36.6002, lon: -121.8947 },
+                { name: "Redlands", state: "CA", students: 1, lat: 34.0556, lon: -117.1825 },
+                { name: "Sacramento", state: "CA", students: 1, lat: 38.5816, lon: -121.4944 },
+                
+                // Other states
+                { name: "Seattle", state: "WA", students: 1, lat: 47.6062, lon: -122.3321 },
+                { name: "Washington State", state: "WA", students: 1, lat: 47.7511, lon: -120.7401 },
+                { name: "Washington", state: "D.C.", students: 1, lat: 38.9072, lon: -77.0369 },
+                { name: "Golden", state: "CO", students: 1, lat: 39.7555, lon: -105.2211 },
+                
+                // International
+                { name: "Mexico City", state: "Mexico", students: 1, lat: 19.4326, lon: -99.1332 }
+            ];
+            
+            // Function to get symbol based on student count and location
+            function getSymbol(students, state) {
+                let color, size;
+                
+                if (state === "Mexico") {
+                    color = [155, 89, 182]; // Purple for international
+                    size = "12px";
+                } else if (students >= 4) {
+                    color = [231, 76, 60]; // Red for high count
+                    size = "16px";
+                } else if (students >= 2) {
+                    color = [243, 156, 18]; // Orange for medium count
+                    size = "14px";
+                } else {
+                    color = [52, 152, 219]; // Blue for single student
+                    size = "12px";
+                }
+                
+                return {
+                    type: "simple-marker",
+                    color: color,
+                    size: size,
+                    outline: {
+                        color: [255, 255, 255],
+                        width: 2
+                    }
+                };
+            }
+            
+            // Add location points to map
+            locations.forEach(location => {
+                const point = new Point({
+                    longitude: location.lon,
+                    latitude: location.lat
+                });
+                
+                const popupTemplate = new PopupTemplate({
+                    title: `${location.name}, ${location.state}`,
+                    content: `
+                        <div style="padding: 10px;">
+                            <p><strong>Students:</strong> ${location.students}</p>
+                            <p><strong>Location:</strong> ${location.name}, ${location.state}</p>
+                            ${location.state === "CA" ? '<p><em>California represents 83.9% of all students</em></p>' : ''}
+                            ${location.state === "Mexico" ? '<p><em>International student</em></p>' : ''}
+                        </div>
+                    `
+                });
+                
+                const graphic = new Graphic({
+                    geometry: point,
+                    symbol: getSymbol(location.students, location.state),
+                    popupTemplate: popupTemplate,
+                    attributes: {
+                        name: location.name,
+                        state: location.state,
+                        students: location.students
+                    }
+                });
+                
+                graphicsLayer.add(graphic);
+            });
+            
+            // Adjust view to show all points
+            view.when(() => {
+                view.goTo(graphicsLayer.graphics, {
+                    duration: 2000
+                }).then(() => {
+                    // Zoom out a bit to show context
+                    view.zoom = view.zoom - 1;
+                });
+            });
+        });
+    </script>
+</body>
+</html>
