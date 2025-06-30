@@ -196,6 +196,7 @@
                 
                 // Central Coast
                 'Monterey': 'Central Coast',
+                'Ventura': 'Central Coast',
                 'San Luis Obispo': 'Central Coast',
                 'Santa Barbara': 'Central Coast',
                 'Santa Cruz': 'Central Coast',
@@ -207,7 +208,6 @@
                 
                 // San Diego
                 'San Diego': 'San Diego',
-                'Imperial': 'San Diego',
                 
                 // Sacramento
                 'Sacramento': 'Sacramento',
@@ -303,7 +303,7 @@
                     });
 
                     // Load California counties GeoJSON
-                    const geoResponse = await fetch('https://raw.githubusercontent.com/pluricalifornia/studentlocation/main/data/CA_Counties.geojson');
+                    const geoResponse = await fetch('https://raw.githubusercontent.com/pluricalifornia/studentlocation/main/data/CA_COUNTIES.json');
                     const geoData = await geoResponse.json();
 
                     // Group California counties by region and count students
