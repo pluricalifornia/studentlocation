@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Summer School Student Locations</title>
+    <title>Summer School Student Locations - Regional Boundaries</title>
     <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css">
     <script src="https://js.arcgis.com/4.29/"></script>
     <style>
@@ -42,18 +42,17 @@
         }
         
         .legend-symbol {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
+            width: 20px;
+            height: 15px;
             margin-right: 8px;
-            border: 2px solid #fff;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            border: 1px solid #333;
         }
         
-        .symbol-large { background-color: #e74c3c; }
-        .symbol-medium { background-color: #f39c12; }
-        .symbol-small { background-color: #3498db; }
-        .symbol-international { background-color: #9b59b6; }
+        .color-very-high { background-color: rgba(231, 76, 60, 0.7); }
+        .color-high { background-color: rgba(243, 156, 18, 0.7); }
+        .color-medium { background-color: rgba(52, 152, 219, 0.7); }
+        .color-low { background-color: rgba(46, 204, 113, 0.7); }
+        .color-international { background-color: rgba(155, 89, 182, 0.7); }
         
         #stats {
             position: absolute;
@@ -79,31 +78,44 @@
             margin: 5px 0;
             color: #555;
         }
+
+        #tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div id="mapDiv"></div>
+    <div id="tooltip"></div>
     
     <div id="legend">
         <div class="legend-title">Student Distribution</div>
         <div class="legend-item">
-            <div class="legend-symbol symbol-large"></div>
+            <div class="legend-symbol color-very-high"></div>
             <span>10+ Students</span>
         </div>
         <div class="legend-item">
-            <div class="legend-symbol symbol-medium"></div>
+            <div class="legend-symbol color-high"></div>
             <span>5-9 Students</span>
         </div>
         <div class="legend-item">
-            <div class="legend-symbol symbol-small"></div>
+            <div class="legend-symbol color-medium"></div>
             <span>2-4 Students</span>
         </div>
         <div class="legend-item">
-            <div class="legend-symbol" style="background-color: #2ecc71;"></div>
+            <div class="legend-symbol color-low"></div>
             <span>1 Student</span>
         </div>
         <div class="legend-item">
-            <div class="legend-symbol symbol-international"></div>
+            <div class="legend-symbol color-international"></div>
             <span>International</span>
         </div>
     </div>
@@ -125,9 +137,9 @@
             "esri/views/MapView",
             "esri/Graphic",
             "esri/layers/GraphicsLayer",
-            "esri/geometry/Point",
+            "esri/geometry/Polygon",
             "esri/PopupTemplate"
-        ], function(Map, MapView, Graphic, GraphicsLayer, Point, PopupTemplate) {
+        ], function(Map, MapView, Graphic, PopupTemplate, GraphicsLayer, Polygon) {
             
             // Create map
             const map = new Map({
@@ -138,107 +150,182 @@
             const view = new MapView({
                 container: "mapDiv",
                 map: map,
-                center: [-119, 37], // Center on California
-                zoom: 6
+                center: [-119, 37],
+                zoom: 5
             });
             
             // Create graphics layer
             const graphicsLayer = new GraphicsLayer();
             map.add(graphicsLayer);
-            
-            // Location data based on updated regional analysis
-            const locations = [
-                // California regions
-                { name: "Bay Area", state: "CA", students: 12, lat: 37.8272, lon: -122.2913 },
-                { name: "Los Angeles", state: "CA", students: 7, lat: 34.0522, lon: -118.2437 },
-                { name: "Central Coast", state: "CA", students: 2, lat: 35.3738, lon: -120.8509 },
-                { name: "Inland Empire", state: "CA", students: 2, lat: 34.0633, lon: -117.6509 },
-                { name: "San Diego", state: "CA", students: 2, lat: 32.7157, lon: -117.1611 },
-                { name: "Sacramento", state: "CA", students: 1, lat: 38.5816, lon: -121.4944 },
-                
-                // Other states
-                { name: "Washington State", state: "WA", students: 2, lat: 47.7511, lon: -120.7401 },
-                { name: "Washington", state: "D.C.", students: 1, lat: 38.9072, lon: -77.0369 },
-                { name: "Colorado State", state: "CO", students: 1, lat: 39.5501, lon: -105.7821 },
-                
-                // International
-                { name: "Mexico City", state: "Mexico", students: 1, lat: 19.4326, lon: -99.1332 }
+
+            // Regional boundary data with approximate coordinates
+            const regionBoundaries = [
+                {
+                    name: "Bay Area",
+                    state: "CA",
+                    students: 12,
+                    coordinates: [
+                        [[-123.5, 38.5], [-121.5, 38.5], [-121.5, 37.2], [-122.8, 36.8], [-123.5, 37.8], [-123.5, 38.5]]]
+                },
+                {
+                    name: "Los Angeles",
+                    state: "CA", 
+                    students: 7,
+                    coordinates: [
+                        [[-119.5, 34.8], [-117.0, 34.8], [-117.0, 33.2], [-119.5, 33.2], [-119.5, 34.8]]]
+                },
+                {
+                    name: "Central Coast",
+                    state: "CA",
+                    students: 2,
+                    coordinates: [
+                        [[-122.8, 36.8], [-119.5, 36.8], [-119.5, 34.8], [-122.0, 34.0], [-122.8, 35.5], [-122.8, 36.8]]]
+                },
+                {
+                    name: "Inland Empire", 
+                    state: "CA",
+                    students: 2,
+                    coordinates: [
+                        [[-117.0, 34.8], [-116.0, 34.8], [-116.0, 33.2], [-117.0, 33.2], [-117.0, 34.8]]]
+                },
+                {
+                    name: "San Diego",
+                    state: "CA",
+                    students: 2,
+                    coordinates: [
+                        [[-118.0, 33.2], [-116.0, 33.2], [-116.0, 32.0], [-118.0, 32.0], [-118.0, 33.2]]]
+                },
+                {
+                    name: "Sacramento",
+                    state: "CA", 
+                    students: 1,
+                    coordinates: [
+                        [[-122.5, 39.5], [-120.5, 39.5], [-120.5, 37.8], [-122.5, 37.8], [-122.5, 39.5]]]
+                },
+                {
+                    name: "Washington State",
+                    state: "WA",
+                    students: 2,
+                    coordinates: [
+                        [[-125.0, 49.0], [-116.9, 49.0], [-116.9, 45.5], [-124.8, 45.5], [-125.0, 49.0]]]
+                },
+                {
+                    name: "Colorado State",
+                    state: "CO",
+                    students: 1,
+                    coordinates: [
+                        [[-109.0, 41.0], [-102.0, 41.0], [-102.0, 37.0], [-109.0, 37.0], [-109.0, 41.0]]]
+                },
+                {
+                    name: "Washington",
+                    state: "D.C.",
+                    students: 1,
+                    coordinates: [
+                        [[-77.2, 39.0], [-76.9, 39.0], [-76.9, 38.8], [-77.2, 38.8], [-77.2, 39.0]]]
+                },
+                {
+                    name: "Mexico City",
+                    state: "Mexico",
+                    students: 1,
+                    coordinates: [
+                        [[-99.5, 19.8], [-98.8, 19.8], [-98.8, 19.1], [-99.5, 19.1], [-99.5, 19.8]]]
+                }
             ];
-            
-            // Function to get symbol based on student count and location
-            function getSymbol(students, state) {
-                let color, size;
+
+            // Function to get fill color and opacity based on student count
+            function getFillSymbol(students, state) {
+                let color;
                 
                 if (state === "Mexico") {
-                    color = [155, 89, 182]; // Purple for international
-                    size = "14px";
+                    color = [155, 89, 182, 0.7]; // Purple for international
                 } else if (students >= 10) {
-                    color = [231, 76, 60]; // Red for very high count
-                    size = "20px";
+                    color = [231, 76, 60, 0.7]; // Red for very high count
                 } else if (students >= 5) {
-                    color = [243, 156, 18]; // Orange for high count
-                    size = "16px";
+                    color = [243, 156, 18, 0.7]; // Orange for high count  
                 } else if (students >= 2) {
-                    color = [52, 152, 219]; // Blue for medium count
-                    size = "14px";
+                    color = [52, 152, 219, 0.7]; // Blue for medium count
                 } else {
-                    color = [46, 204, 113]; // Green for single student
-                    size = "12px";
+                    color = [46, 204, 113, 0.7]; // Green for single student
                 }
                 
                 return {
-                    type: "simple-marker",
+                    type: "simple-fill",
                     color: color,
-                    size: size,
                     outline: {
                         color: [255, 255, 255],
                         width: 2
                     }
                 };
             }
-            
-            // Add location points to map
-            locations.forEach(location => {
-                const point = new Point({
-                    longitude: location.lon,
-                    latitude: location.lat
+
+            // Add regional boundaries to map
+            regionBoundaries.forEach(region => {
+                const polygon = new Polygon({
+                    rings: region.coordinates,
+                    spatialReference: { wkid: 4326 }
                 });
                 
                 const popupTemplate = new PopupTemplate({
-                    title: `${location.name}, ${location.state}`,
+                    title: `${region.name}${region.state !== 'CA' ? ', ' + region.state : ''}`,
                     content: `
                         <div style="padding: 10px;">
-                            <p><strong>Students:</strong> ${location.students}</p>
-                            <p><strong>Region:</strong> ${location.name}, ${location.state}</p>
-                            <p><strong>Percentage:</strong> ${((location.students / 31) * 100).toFixed(1)}% of total</p>
-                            ${location.state === "CA" ? '<p><em>California represents 83.9% of all students</em></p>' : ''}
-                            ${location.state === "Mexico" ? '<p><em>International student</em></p>' : ''}
-                            ${location.name === "Bay Area" ? '<p><em>Largest regional concentration</em></p>' : ''}
+                            <p><strong>Students:</strong> ${region.students}</p>
+                            <p><strong>Region:</strong> ${region.name}${region.state !== 'CA' ? ', ' + region.state : ''}</p>
+                            <p><strong>Percentage:</strong> ${((region.students / 31) * 100).toFixed(1)}% of total</p>
+                            ${region.state === "CA" ? '<p><em>California region</em></p>' : ''}
+                            ${region.state === "Mexico" ? '<p><em>International students</em></p>' : ''}
+                            ${region.name === "Bay Area" ? '<p><em>Largest regional concentration</em></p>' : ''}
                         </div>
                     `
                 });
                 
                 const graphic = new Graphic({
-                    geometry: point,
-                    symbol: getSymbol(location.students, location.state),
+                    geometry: polygon,
+                    symbol: getFillSymbol(region.students, region.state),
                     popupTemplate: popupTemplate,
                     attributes: {
-                        name: location.name,
-                        state: location.state,
-                        students: location.students
+                        name: region.name,
+                        state: region.state,
+                        students: region.students
                     }
                 });
                 
                 graphicsLayer.add(graphic);
             });
+
+            // Add hover effects
+            let tooltip = document.getElementById('tooltip');
             
-            // Adjust view to show all points
+            view.on("pointer-move", function(event) {
+                view.hitTest(event).then(function(response) {
+                    if (response.results.length > 0) {
+                        const graphic = response.results[0].graphic;
+                        if (graphic && graphic.attributes && graphic.attributes.name) {
+                            tooltip.style.display = 'block';
+                            tooltip.style.left = event.x + 10 + 'px';
+                            tooltip.style.top = event.y - 30 + 'px';
+                            tooltip.innerHTML = `
+                                <strong>${graphic.attributes.name}</strong><br>
+                                ${graphic.attributes.students} student${graphic.attributes.students > 1 ? 's' : ''}
+                            `;
+                            view.container.style.cursor = 'pointer';
+                        }
+                    } else {
+                        tooltip.style.display = 'none';
+                        view.container.style.cursor = 'default';
+                    }
+                });
+            });
+
+            view.on("pointer-leave", function() {
+                tooltip.style.display = 'none';
+                view.container.style.cursor = 'default';
+            });
+            
+            // Adjust view to show all regions
             view.when(() => {
                 view.goTo(graphicsLayer.graphics, {
                     duration: 2000
-                }).then(() => {
-                    // Zoom out a bit to show context
-                    view.zoom = view.zoom - 1;
                 });
             });
         });
