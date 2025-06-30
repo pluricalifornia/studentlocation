@@ -196,11 +196,11 @@
                 
                 // Central Coast
                 'Monterey': 'Central Coast',
-                'Ventura': 'Central Coast',
                 'San Luis Obispo': 'Central Coast',
                 'Santa Barbara': 'Central Coast',
                 'Santa Cruz': 'Central Coast',
                 'San Benito': 'Central Coast',
+                'Ventura': 'Central Coast',
                 
                 // Inland Empire
                 'Riverside': 'Inland Empire',
@@ -210,7 +210,8 @@
                 'San Diego': 'San Diego',
                 
                 // Sacramento
-                'Sacramento': 'Sacramento'
+                'Sacramento': 'Sacramento',
+            
             };
 
             // State boundaries (approximate)
@@ -301,6 +302,12 @@
                     const geoResponse = await fetch('https://raw.githubusercontent.com/pluricalifornia/studentlocation/main/data/CA_COUNTIES.json');
                     const geoData = await geoResponse.json();
 
+                    // Debug: Log all county names to see what's in the data
+                    console.log('County names in data:');
+                    geoData.features.forEach(feature => {
+                        console.log(`"${feature.properties.NAME}"`);
+                    });
+
                     // Group California counties by region and count students
                     const caRegionCounts = {
                         'Bay Area': 0,
@@ -330,21 +337,30 @@
                         const regionName = countyToRegion[countyName] || 'Other';
                         const studentCount = caRegionCounts[regionName] || 0;
 
-                        // Convert coordinates from EPSG:3857 to geographic coordinates
-                        // The coordinates are already in the projected system, so we need to handle them properly
-                        const rings = feature.geometry.coordinates.map(ring => {
-                            if (feature.geometry.type === "Polygon") {
-                                return ring.map(coord => [coord[0], coord[1]]);
-                            } else {
-                                // Handle MultiPolygon if needed
-                                return ring;
-                            }
-                        });
+                        let polygon;
 
-                        const polygon = new Polygon({
-                            rings: rings,
-                            spatialReference: { wkid: 3857 } // Web Mercator projection
-                        });
+                        // Handle both Polygon and MultiPolygon geometries
+                        if (feature.geometry.type === "Polygon") {
+                            const rings = feature.geometry.coordinates.map(ring => 
+                                ring.map(coord => [coord[0], coord[1]])
+                            );
+                            polygon = new Polygon({
+                                rings: rings,
+                                spatialReference: { wkid: 3857 }
+                            });
+                        } else if (feature.geometry.type === "MultiPolygon") {
+                            // For MultiPolygon, we need to flatten the structure
+                            const allRings = [];
+                            feature.geometry.coordinates.forEach(polygonCoords => {
+                                polygonCoords.forEach(ring => {
+                                    allRings.push(ring.map(coord => [coord[0], coord[1]]));
+                                });
+                            });
+                            polygon = new Polygon({
+                                rings: allRings,
+                                spatialReference: { wkid: 3857 }
+                            });
+                        }
 
                         const popupTemplate = new PopupTemplate({
                             title: `${countyName} County`,
@@ -354,6 +370,7 @@
                                     <p><strong>Region:</strong> ${regionName}</p>
                                     <p><strong>Students in Region:</strong> ${studentCount}</p>
                                     <p><strong>Percentage:</strong> ${((studentCount / studentData.length) * 100).toFixed(1)}% of total</p>
+                                    <p><strong>Geometry:</strong> ${feature.geometry.type}</p>
                                 </div>
                             `
                         });
