@@ -302,18 +302,18 @@
                         regionCounts[region] = (regionCounts[region] || 0) + 1;
                     });
 
-                    // Load California counties GeoJSON
+                    // Load California counties JSON
                     const geoResponse = await fetch('https://raw.githubusercontent.com/pluricalifornia/studentlocation/main/data/CA_COUNTIES.json');
                     const geoData = await geoResponse.json();
 
                     // Group California counties by region and count students
                     const caRegionCounts = {
-                        'Bay Area': 12,
-                        'Los Angeles': 7,
-                        'Central Coast': 2,
-                        'Inland Empire': 3,
-                        'San Diego': 2,
-                        'Sacramento': 1
+                        'Bay Area': 0,
+                        'Los Angeles': 0,
+                        'Central Coast': 0,
+                        'Inland Empire': 0,
+                        'San Diego': 0,
+                        'Sacramento': 0
                     };
 
                     // Count students by California region
@@ -335,13 +335,20 @@
                         const regionName = countyToRegion[countyName] || 'Other';
                         const studentCount = caRegionCounts[regionName] || 0;
 
-                        // Convert GeoJSON coordinates to ArcGIS Polygon
-                        const rings = feature.geometry.coordinates.map(ring => 
-                            ring.map(coord => [coord[0], coord[1]])
-                        );
+                        // Convert coordinates from EPSG:3857 to geographic coordinates
+                        // The coordinates are already in the projected system, so we need to handle them properly
+                        const rings = feature.geometry.coordinates.map(ring => {
+                            if (feature.geometry.type === "Polygon") {
+                                return ring.map(coord => [coord[0], coord[1]]);
+                            } else {
+                                // Handle MultiPolygon if needed
+                                return ring;
+                            }
+                        });
 
                         const polygon = new Polygon({
-                            rings: rings
+                            rings: rings,
+                            spatialReference: { wkid: 3857 } // Web Mercator projection
                         });
 
                         const popupTemplate = new PopupTemplate({
