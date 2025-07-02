@@ -368,6 +368,11 @@
                     const statesResponse = await fetch('https://raw.githubusercontent.com/pluricalifornia/studentlocation/main/data/US_STATES.json');
                     const statesData = await statesResponse.json();
 
+                    // Debug coordinate systems
+                    console.log('CA Counties sample coordinates:', geoData.features[0].geometry.coordinates[0][0]);
+                    console.log('US States sample coordinates:', statesData.features[0].geometry.coordinates[0][0]);
+                    console.log('CA Counties CRS:', geoData.crs);
+
                     // Group California counties by region and count students
                     const caRegionCounts = {
                         'Bay Area': 0,
@@ -405,7 +410,7 @@
                             );
                             polygon = new Polygon({
                                 rings: rings,
-                                spatialReference: { wkid: 4326 } // Use WGS84 to match source data
+                                spatialReference: { wkid: 3857 } // CA counties are in Web Mercator (EPSG:3857)
                             });
                         } else if (feature.geometry.type === "MultiPolygon") {
                             // For MultiPolygon, we need to flatten the structure
@@ -417,7 +422,7 @@
                             });
                             polygon = new Polygon({
                                 rings: allRings,
-                                spatialReference: { wkid: 4326 } // Use WGS84 to match source data
+                                spatialReference: { wkid: 3857 } // CA counties are in Web Mercator (EPSG:3857)
                             });
                         }
 
