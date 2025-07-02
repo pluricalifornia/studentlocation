@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Summer School Student Locations - California Counties</title>
+    <title>Summer School Student Locations</title>
     <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css">
     <script src="https://js.arcgis.com/4.29/"></script>
     <style>
@@ -13,6 +13,38 @@
             height: 100%;
             width: 100%;
             font-family: Arial, sans-serif;
+        }
+        
+        #mapToggle {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            display: flex;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .toggle-button {
+            padding: 10px 20px;
+            border: none;
+            background: white;
+            cursor: pointer;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        
+        .toggle-button:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .toggle-button.active {
+            background-color: #007ac2;
+            color: white;
         }
         
         #legend {
@@ -54,6 +86,7 @@
         .color-inland-empire { background-color: rgba(46, 204, 113, 0.7); }
         .color-san-diego { background-color: rgba(155, 89, 182, 0.7); }
         .color-sacramento { background-color: rgba(255, 193, 7, 0.7); }
+        .color-california { background-color: rgba(255, 165, 0, 0.7); }
         .color-washington { background-color: rgba(108, 117, 125, 0.7); }
         .color-colorado { background-color: rgba(220, 53, 69, 0.7); }
         .color-minnesota { background-color: rgba(40, 167, 69, 0.7); }
@@ -109,6 +142,10 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.2);
             z-index: 1000;
         }
+        
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -116,55 +153,68 @@
     <div id="tooltip"></div>
     <div id="loading">Loading map data...</div>
     
+    <div id="mapToggle">
+        <button class="toggle-button active" id="caMapBtn">CA County Map</button>
+        <button class="toggle-button" id="naMapBtn">North America Map</button>
+    </div>
+    
     <div id="legend">
         <div class="legend-title">Regions</div>
-        <div class="legend-item">
-            <div class="legend-symbol color-bay-area"></div>
-            <span>Bay Area</span>
+        <div id="caLegend">
+            <div class="legend-item">
+                <div class="legend-symbol color-bay-area"></div>
+                <span>Bay Area</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-symbol color-los-angeles"></div>
+                <span>Los Angeles</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-symbol color-central-coast"></div>
+                <span>Central Coast</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-symbol color-inland-empire"></div>
+                <span>Inland Empire</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-symbol color-san-diego"></div>
+                <span>San Diego</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-symbol color-sacramento"></div>
+                <span>Sacramento</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-symbol color-other"></div>
+                <span>Other Counties</span>
+            </div>
         </div>
-        <div class="legend-item">
-            <div class="legend-symbol color-los-angeles"></div>
-            <span>Los Angeles</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-symbol color-central-coast"></div>
-            <span>Central Coast</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-symbol color-inland-empire"></div>
-            <span>Inland Empire</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-symbol color-san-diego"></div>
-            <span>San Diego</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-symbol color-sacramento"></div>
-            <span>Sacramento</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-symbol color-washington"></div>
-            <span>Washington State</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-symbol color-colorado"></div>
-            <span>Colorado</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-symbol color-minnesota"></div>
-            <span>Minnesota</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-symbol color-dc"></div>
-            <span>Washington D.C.</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-symbol color-mexico"></div>
-            <span>Mexico</span>
-        </div>
-        <div class="legend-item">
-            <div class="legend-symbol color-other"></div>
-            <span>Other Counties</span>
+        <div id="naLegend" class="hidden">
+            <div class="legend-item">
+                <div class="legend-symbol color-california"></div>
+                <span>California</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-symbol color-washington"></div>
+                <span>Washington State</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-symbol color-colorado"></div>
+                <span>Colorado</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-symbol color-minnesota"></div>
+                <span>Minnesota</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-symbol color-dc"></div>
+                <span>Washington D.C.</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-symbol color-mexico"></div>
+                <span>Mexico</span>
+            </div>
         </div>
     </div>
     
@@ -200,18 +250,25 @@
                 container: "mapDiv",
                 map: map,
                 center: [-119, 37],
-                zoom: 5
+                zoom: 6
             });
             
             // Create graphics layers
-            const californiaLayer = new GraphicsLayer();
-            const statesLayer = new GraphicsLayer();
+            const californiaCountiesLayer = new GraphicsLayer();
+            const northAmericaStatesLayer = new GraphicsLayer();
             const labelsLayer = new GraphicsLayer();
-            const outlineLayer = new GraphicsLayer(); // For California state outline
-            map.add(californiaLayer);
-            map.add(statesLayer);
-            map.add(outlineLayer);
+            
+            map.add(californiaCountiesLayer);
+            map.add(northAmericaStatesLayer);
             map.add(labelsLayer);
+
+            // Current map mode
+            let currentMap = 'ca';
+            
+            // Global data storage
+            let studentData = [];
+            let regionCounts = {};
+            let caRegionCounts = {};
 
             // Regional mapping for California counties
             const countyToRegion = {
@@ -250,6 +307,7 @@
 
             // Mapping of state names to display names and student data keys
             const stateMapping = {
+                'California': { displayName: 'California', studentKey: 'CA' },
                 'Washington': { displayName: 'Washington State', studentKey: 'Washington State' },
                 'Colorado': { displayName: 'Colorado', studentKey: 'Colorado State' },
                 'Minnesota': { displayName: 'Minnesota', studentKey: 'Minnesota State' }
@@ -296,6 +354,9 @@
                     case 'Sacramento':
                         color = [255, 193, 7, 0.7]; // Yellow
                         break;
+                    case 'California':
+                        color = [255, 165, 0, 0.7]; // Orange
+                        break;
                     case 'Washington State':
                         color = [108, 117, 125, 0.7]; // Gray
                         break;
@@ -330,319 +391,58 @@
                 return location.replace(/\s+/g, ' ').trim();
             }
 
-            // Load data and create map
-            async function loadMapData() {
-                try {
-                    // Load student data from uploaded CSV
-                    const csvResponse = await fetch('https://raw.githubusercontent.com/pluricalifornia/studentlocation/main/data/SummerSchoolLocations.csv');
-                    const csvText = await csvResponse.text();
-                    
-                    // Parse CSV data with better handling
-                    const lines = csvText.split('\n').filter(line => line.trim());
-                    const studentData = [];
-                    for (let i = 1; i < lines.length; i++) {
-                        const parts = lines[i].split(',');
-                        if (parts.length >= 2) {
-                            const city = normalizeLocation(parts[0].replace(/"/g, ''));
-                            const state = normalizeLocation(parts[1].replace(/"/g, ''));
-                            if (city && state) {
-                                studentData.push({ city, state });
-                            }
-                        }
-                    }
-
-                    // Count students by region with normalized keys
-                    const regionCounts = {};
-                    studentData.forEach(student => {
-                        const region = `${student.city}, ${student.state}`;
-                        regionCounts[region] = (regionCounts[region] || 0) + 1;
+            // Function to switch between maps
+            function switchMap(mapType) {
+                currentMap = mapType;
+                
+                // Update button states
+                document.getElementById('caMapBtn').classList.toggle('active', mapType === 'ca');
+                document.getElementById('naMapBtn').classList.toggle('active', mapType === 'na');
+                
+                // Update legend visibility
+                document.getElementById('caLegend').classList.toggle('hidden', mapType !== 'ca');
+                document.getElementById('naLegend').classList.toggle('hidden', mapType !== 'na');
+                
+                // Update layer visibility
+                californiaCountiesLayer.visible = (mapType === 'ca');
+                northAmericaStatesLayer.visible = (mapType === 'na');
+                
+                // Clear labels and recreate for current map
+                labelsLayer.removeAll();
+                createLabels(mapType);
+                
+                // Adjust view
+                if (mapType === 'ca') {
+                    view.goTo({
+                        center: [-119, 37],
+                        zoom: 6
                     });
-
-                    console.log('Student counts by region:', regionCounts);
-
-                    // Load California counties JSON
-                    const geoResponse = await fetch('https://raw.githubusercontent.com/pluricalifornia/studentlocation/main/data/CA_COUNTIES.json');
-                    const geoData = await geoResponse.json();
-
-                    // Load US states JSON
-                    const statesResponse = await fetch('https://raw.githubusercontent.com/pluricalifornia/studentlocation/main/data/US_STATES.json');
-                    const statesData = await statesResponse.json();
-
-                    // Debug coordinate systems
-                    console.log('CA Counties sample coordinates:', geoData.features[0].geometry.coordinates[0][0]);
-                    console.log('US States sample coordinates:', statesData.features[0].geometry.coordinates[0][0]);
-                    console.log('CA Counties CRS:', geoData.crs);
-
-                    // Group California counties by region and count students
-                    const caRegionCounts = {
-                        'Bay Area': 0,
-                        'Los Angeles': 0,
-                        'Central Coast': 0,
-                        'Inland Empire': 0,
-                        'San Diego': 0,
-                        'Sacramento': 0
-                    };
-
-                    // Count students by California region
-                    Object.entries(regionCounts).forEach(([region, count]) => {
-                        if (region.includes(', CA')) {
-                            const cityName = region.split(', ')[0];
-                            if (caRegionCounts.hasOwnProperty(cityName)) {
-                                caRegionCounts[cityName] += count;
-                            }
-                        }
+                } else {
+                    view.goTo({
+                        center: [-100, 45],
+                        zoom: 3
                     });
+                }
+            }
 
-                    console.log('CA Region counts:', caRegionCounts);
+            // Function to create labels for the current map
+            function createLabels(mapType) {
+                const regionCenters = {
+                    'Bay Area': { lat: 37.8272, lon: -122.2913 },
+                    'Los Angeles': { lat: 34.0522, lon: -118.2437 },
+                    'Central Coast': { lat: 35.3738, lon: -120.8509 },
+                    'Inland Empire': { lat: 34.0396, lon: -116.9742 },
+                    'San Diego': { lat: 32.7157, lon: -117.1611 },
+                    'Sacramento': { lat: 38.5816, lon: -121.4944 },
+                    'California': { lat: 36.7783, lon: -119.4179 },
+                    'Washington State': { lat: 47.7511, lon: -120.7401 },
+                    'Colorado': { lat: 39.5501, lon: -105.7821 },
+                    'Minnesota': { lat: 46.7296, lon: -94.6859 },
+                    'Washington D.C.': { lat: 38.9072, lon: -77.0369 },
+                    'Mexico': { lat: 19.4326, lon: -99.1332 }
+                };
 
-                    // Add California counties to map
-                    geoData.features.forEach(feature => {
-                        const countyName = feature.properties.NAME;
-                        const regionName = countyToRegion[countyName] || 'Other';
-                        const studentCount = caRegionCounts[regionName] || 0;
-
-                        let polygon;
-
-                        // Handle both Polygon and MultiPolygon geometries
-                        if (feature.geometry.type === "Polygon") {
-                            const rings = feature.geometry.coordinates.map(ring => 
-                                ring.map(coord => [coord[0], coord[1]])
-                            );
-                            polygon = new Polygon({
-                                rings: rings,
-                                spatialReference: { wkid: 3857 } // CA counties are in Web Mercator (EPSG:3857)
-                            });
-                        } else if (feature.geometry.type === "MultiPolygon") {
-                            // For MultiPolygon, we need to flatten the structure
-                            const allRings = [];
-                            feature.geometry.coordinates.forEach(polygonCoords => {
-                                polygonCoords.forEach(ring => {
-                                    allRings.push(ring.map(coord => [coord[0], coord[1]]));
-                                });
-                            });
-                            polygon = new Polygon({
-                                rings: allRings,
-                                spatialReference: { wkid: 3857 } // CA counties are in Web Mercator (EPSG:3857)
-                            });
-                        }
-
-                        const popupTemplate = new PopupTemplate({
-                            title: `${countyName} County`,
-                            content: `
-                                <div style="padding: 10px;">
-                                    <p><strong>County:</strong> ${countyName}</p>
-                                    <p><strong>Region:</strong> ${regionName}</p>
-                                    <p><strong>Students in Region:</strong> ${studentCount}</p>
-                                    <p><strong>Percentage:</strong> ${((studentCount / studentData.length) * 100).toFixed(1)}% of total</p>
-                                    <p><strong>Geometry:</strong> ${feature.geometry.type}</p>
-                                </div>
-                            `
-                        });
-
-                        const graphic = new Graphic({
-                            geometry: polygon,
-                            symbol: getFillSymbol(regionName),
-                            popupTemplate: popupTemplate,
-                            attributes: {
-                                name: countyName,
-                                region: regionName,
-                                students: studentCount
-                            }
-                        });
-
-                        californiaLayer.add(graphic);
-                    });
-
-                    // Add California state outline
-                    const californiaFeature = statesData.features.find(feature => 
-                        feature.properties.name === 'California'
-                    );
-                    
-                    if (californiaFeature) {
-                        let caPolygon;
-                        if (californiaFeature.geometry.type === "Polygon") {
-                            const rings = californiaFeature.geometry.coordinates.map(ring => 
-                                ring.map(coord => [coord[0], coord[1]])
-                            );
-                            caPolygon = new Polygon({
-                                rings: rings,
-                                spatialReference: { wkid: 3857 }
-                            });
-                        } else if (californiaFeature.geometry.type === "MultiPolygon") {
-                            const allRings = [];
-                            californiaFeature.geometry.coordinates.forEach(polygonCoords => {
-                                polygonCoords.forEach(ring => {
-                                    allRings.push(ring.map(coord => [coord[0], coord[1]]));
-                                });
-                            });
-                            caPolygon = new Polygon({
-                                rings: allRings,
-                                spatialReference: { wkid: 4326 } // Use WGS84 to match source data
-                            });
-                        }
-
-                        const caOutlineGraphic = new Graphic({
-                            geometry: caPolygon,
-                            symbol: {
-                                type: "simple-fill",
-                                color: [0, 0, 0, 0], // Transparent fill
-                                outline: {
-                                    color: [0, 0, 0], // Black outline
-                                    width: 2
-                                }
-                            }
-                        });
-
-                        outlineLayer.add(caOutlineGraphic);
-                    }
-
-                    // Process US states from JSON file
-                    statesData.features.forEach(feature => {
-                        const stateName = feature.properties.name;
-                        const mapping = stateMapping[stateName];
-                        
-                        if (mapping) {
-                            // Find student count for this state with exact matching
-                            const studentCount = Object.entries(regionCounts).reduce((count, [region, students]) => {
-                                const regionKey = `${mapping.studentKey}, ${stateName === 'Washington' ? 'WA' : stateName === 'Colorado' ? 'CO' : 'MN'}`;
-                                if (region === regionKey) {
-                                    return count + students;
-                                }
-                                return count;
-                            }, 0);
-                            
-                            console.log(`State: ${stateName}, Looking for: ${mapping.studentKey}, Found: ${studentCount} students`);
-                            
-                            let polygon;
-
-                            // Handle both Polygon and MultiPolygon geometries (same as CA counties)
-                            if (feature.geometry.type === "Polygon") {
-                                const rings = feature.geometry.coordinates.map(ring => 
-                                    ring.map(coord => [coord[0], coord[1]])
-                                );
-                                polygon = new Polygon({
-                                    rings: rings,
-                                    spatialReference: { wkid: 4326 } // Use WGS84 like the source data
-                                });
-                            } else if (feature.geometry.type === "MultiPolygon") {
-                                // For MultiPolygon, we need to flatten the structure
-                                const allRings = [];
-                                feature.geometry.coordinates.forEach(polygonCoords => {
-                                    polygonCoords.forEach(ring => {
-                                        allRings.push(ring.map(coord => [coord[0], coord[1]]));
-                                    });
-                                });
-                                polygon = new Polygon({
-                                    rings: allRings,
-                                    spatialReference: { wkid: 4326 } // Use WGS84 like the source data
-                                });
-                            }
-
-                            const popupTemplate = new PopupTemplate({
-                                title: mapping.displayName,
-                                content: `
-                                    <div style="padding: 10px;">
-                                        <p><strong>Students:</strong> ${studentCount}</p>
-                                        <p><strong>Location:</strong> ${mapping.displayName}</p>
-                                        <p><strong>Percentage:</strong> ${((studentCount / studentData.length) * 100).toFixed(1)}% of total</p>
-                                        <p><strong>Geometry:</strong> ${feature.geometry.type}</p>
-                                    </div>
-                                `
-                            });
-
-                            if (studentCount > 0) {
-                                const graphic = new Graphic({
-                                    geometry: polygon,
-                                    symbol: getFillSymbol(mapping.displayName),
-                                    popupTemplate: popupTemplate,
-                                    attributes: {
-                                        name: mapping.displayName,
-                                        state: stateName,
-                                        students: studentCount
-                                    }
-                                });
-
-                                statesLayer.add(graphic);
-                                console.log(`Added state boundary for ${mapping.displayName} with ${studentCount} students`);
-                            }
-                        }
-                    });
-
-                    // Add special boundaries (DC and Mexico)
-                    specialBoundaries.forEach(boundary => {
-                        // Find student count for this location with exact matching
-                        const studentCount = Object.entries(regionCounts).reduce((count, [region, students]) => {
-                            const expectedKey = boundary.studentKey === 'Washington' ? 'Washington, D.C.' : 'Mexico City, Mexico';
-                            if (region === expectedKey) {
-                                return count + students;
-                            }
-                            return count;
-                        }, 0);
-                        
-                        console.log(`Special boundary: ${boundary.displayName}, Looking for: ${boundary.studentKey}, Found: ${studentCount} students`);
-                        
-                        const polygon = new Polygon({
-                            rings: boundary.coordinates
-                        });
-
-                        const popupTemplate = new PopupTemplate({
-                            title: boundary.displayName,
-                            content: `
-                                <div style="padding: 10px;">
-                                    <p><strong>Students:</strong> ${studentCount}</p>
-                                    <p><strong>Location:</strong> ${boundary.displayName}</p>
-                                    <p><strong>Percentage:</strong> ${((studentCount / studentData.length) * 100).toFixed(1)}% of total</p>
-                                    ${boundary.displayName === 'Mexico' ? '<p><em>International students</em></p>' : ''}
-                                </div>
-                            `
-                        });
-
-                        if (studentCount > 0) {
-                            const graphic = new Graphic({
-                                geometry: polygon,
-                                symbol: getFillSymbol(boundary.displayName),
-                                popupTemplate: popupTemplate,
-                                attributes: {
-                                    name: boundary.displayName,
-                                    students: studentCount
-                                }
-                            });
-
-                            statesLayer.add(graphic);
-                            console.log(`Added special boundary for ${boundary.displayName} with ${studentCount} students`);
-                        }
-                    });
-
-                    // Update statistics
-                    const caStudents = Object.values(caRegionCounts).reduce((a, b) => a + b, 0);
-                    const mexicoCount = Object.entries(regionCounts).reduce((count, [region, students]) => {
-                        return region.includes('Mexico') ? count + students : count;
-                    }, 0);
-                    const otherStates = studentData.length - caStudents - mexicoCount;
-                    
-                    document.getElementById('total-students').textContent = studentData.length;
-                    document.getElementById('ca-students').textContent = `${caStudents} (${((caStudents/studentData.length)*100).toFixed(1)}%)`;
-                    document.getElementById('bay-area-students').textContent = `${caRegionCounts['Bay Area']} (${((caRegionCounts['Bay Area']/studentData.length)*100).toFixed(1)}%)`;
-                    document.getElementById('la-students').textContent = `${caRegionCounts['Los Angeles']} (${((caRegionCounts['Los Angeles']/studentData.length)*100).toFixed(1)}%)`;
-                    document.getElementById('other-states').textContent = `${otherStates} (${((otherStates/studentData.length)*100).toFixed(1)}%)`;
-                    document.getElementById('international').textContent = `${mexicoCount} (${((mexicoCount/studentData.length)*100).toFixed(1)}%)`;
-                    document.getElementById('total-regions').textContent = Object.keys(regionCounts).length;
-
-                    // Add region labels
-                    const regionCenters = {
-                        'Bay Area': { lat: 37.8272, lon: -122.2913 },
-                        'Los Angeles': { lat: 34.0522, lon: -118.2437 },
-                        'Central Coast': { lat: 35.3738, lon: -120.8509 },
-                        'Inland Empire': { lat: 34.0396, lon: -116.9742 },
-                        'San Diego': { lat: 32.7157, lon: -117.1611 },
-                        'Sacramento': { lat: 38.5816, lon: -121.4944 },
-                        'Washington State': { lat: 47.7511, lon: -120.7401 },
-                        'Colorado': { lat: 39.5501, lon: -105.7821 },
-                        'Minnesota': { lat: 46.7296, lon: -94.6859 },
-                        'Washington D.C.': { lat: 38.9072, lon: -77.0369 },
-                        'Mexico': { lat: 19.4326, lon: -99.1332 }
-                    };
-
+                if (mapType === 'ca') {
                     // Add labels for California regions
                     Object.entries(caRegionCounts).forEach(([regionName, count]) => {
                         if (count > 0 && regionCenters[regionName]) {
@@ -671,14 +471,17 @@
                             labelsLayer.add(labelGraphic);
                         }
                     });
-
-                    // Add labels for other states and special locations
+                } else {
+                    // Add labels for states and special locations
                     [...Object.values(stateMapping), ...specialBoundaries].forEach(location => {
                         const displayName = location.displayName;
                         const studentKey = location.studentKey;
                         
                         let studentCount;
-                        if (location.studentKey === 'Washington') {
+                        if (location.studentKey === 'CA') {
+                            // California gets all CA students
+                            studentCount = Object.values(caRegionCounts).reduce((a, b) => a + b, 0);
+                        } else if (location.studentKey === 'Washington') {
                             // Special handling for Washington D.C.
                             studentCount = regionCounts['Washington, D.C.'] || 0;
                         } else if (location.studentKey === 'Mexico City') {
@@ -718,6 +521,249 @@
                             labelsLayer.add(labelGraphic);
                         }
                     });
+                }
+            }
+
+            // Load data and create map
+            async function loadMapData() {
+                try {
+                    // Load student data from uploaded CSV
+                    const csvResponse = await fetch('https://raw.githubusercontent.com/pluricalifornia/studentlocation/main/data/SummerSchoolLocations.csv');
+                    const csvText = await csvResponse.text();
+                    
+                    // Parse CSV data with better handling
+                    const lines = csvText.split('\n').filter(line => line.trim());
+                    studentData = [];
+                    for (let i = 1; i < lines.length; i++) {
+                        const parts = lines[i].split(',');
+                        if (parts.length >= 2) {
+                            const city = normalizeLocation(parts[0].replace(/"/g, ''));
+                            const state = normalizeLocation(parts[1].replace(/"/g, ''));
+                            if (city && state) {
+                                studentData.push({ city, state });
+                            }
+                        }
+                    }
+
+                    // Count students by region with normalized keys
+                    regionCounts = {};
+                    studentData.forEach(student => {
+                        const region = `${student.city}, ${student.state}`;
+                        regionCounts[region] = (regionCounts[region] || 0) + 1;
+                    });
+
+                    console.log('Student counts by region:', regionCounts);
+
+                    // Load California counties JSON
+                    const geoResponse = await fetch('https://raw.githubusercontent.com/pluricalifornia/studentlocation/main/data/CA_COUNTIES.json');
+                    const geoData = await geoResponse.json();
+
+                    // Load US states JSON
+                    const statesResponse = await fetch('https://raw.githubusercontent.com/pluricalifornia/studentlocation/main/data/US_STATES.json');
+                    const statesData = await statesResponse.json();
+
+                    // Group California counties by region and count students
+                    caRegionCounts = {
+                        'Bay Area': 0,
+                        'Los Angeles': 0,
+                        'Central Coast': 0,
+                        'Inland Empire': 0,
+                        'San Diego': 0,
+                        'Sacramento': 0
+                    };
+
+                    // Count students by California region
+                    Object.entries(regionCounts).forEach(([region, count]) => {
+                        if (region.includes(', CA')) {
+                            const cityName = region.split(', ')[0];
+                            if (caRegionCounts.hasOwnProperty(cityName)) {
+                                caRegionCounts[cityName] += count;
+                            }
+                        }
+                    });
+
+                    console.log('CA Region counts:', caRegionCounts);
+
+                    // Create California Counties Map
+                    geoData.features.forEach(feature => {
+                        const countyName = feature.properties.NAME;
+                        const regionName = countyToRegion[countyName] || 'Other';
+                        const studentCount = caRegionCounts[regionName] || 0;
+
+                        let polygon;
+
+                        // Handle both Polygon and MultiPolygon geometries
+                        if (feature.geometry.type === "Polygon") {
+                            const rings = feature.geometry.coordinates.map(ring => 
+                                ring.map(coord => [coord[0], coord[1]])
+                            );
+                            polygon = new Polygon({
+                                rings: rings,
+                                spatialReference: { wkid: 3857 } // CA counties are in Web Mercator
+                            });
+                        } else if (feature.geometry.type === "MultiPolygon") {
+                            const allRings = [];
+                            feature.geometry.coordinates.forEach(polygonCoords => {
+                                polygonCoords.forEach(ring => {
+                                    allRings.push(ring.map(coord => [coord[0], coord[1]]));
+                                });
+                            });
+                            polygon = new Polygon({
+                                rings: allRings,
+                                spatialReference: { wkid: 3857 } // CA counties are in Web Mercator
+                            });
+                        }
+
+                        const popupTemplate = new PopupTemplate({
+                            title: `${countyName} County`,
+                            content: `
+                                <div style="padding: 10px;">
+                                    <p><strong>County:</strong> ${countyName}</p>
+                                    <p><strong>Region:</strong> ${regionName}</p>
+                                    <p><strong>Students in Region:</strong> ${studentCount}</p>
+                                    <p><strong>Percentage:</strong> ${((studentCount / studentData.length) * 100).toFixed(1)}% of total</p>
+                                </div>
+                            `
+                        });
+
+                        const graphic = new Graphic({
+                            geometry: polygon,
+                            symbol: getFillSymbol(regionName),
+                            popupTemplate: popupTemplate,
+                            attributes: {
+                                name: countyName,
+                                region: regionName,
+                                students: studentCount
+                            }
+                        });
+
+                        californiaCountiesLayer.add(graphic);
+                    });
+
+                    // Create North America States Map
+                    statesData.features.forEach(feature => {
+                        const stateName = feature.properties.name;
+                        const mapping = stateMapping[stateName];
+                        
+                        if (mapping) {
+                            let studentCount;
+                            if (mapping.studentKey === 'CA') {
+                                // California gets all CA students
+                                studentCount = Object.values(caRegionCounts).reduce((a, b) => a + b, 0);
+                            } else {
+                                // Find student count for other states with exact matching
+                                const regionKey = `${mapping.studentKey}, ${stateName === 'Washington' ? 'WA' : stateName === 'Colorado' ? 'CO' : 'MN'}`;
+                                studentCount = regionCounts[regionKey] || 0;
+                            }
+                            
+                            let polygon;
+
+                            // Handle both Polygon and MultiPolygon geometries
+                            if (feature.geometry.type === "Polygon") {
+                                const rings = feature.geometry.coordinates.map(ring => 
+                                    ring.map(coord => [coord[0], coord[1]])
+                                );
+                                polygon = new Polygon({
+                                    rings: rings,
+                                    spatialReference: { wkid: 4326 } // US states are in WGS84
+                                });
+                            } else if (feature.geometry.type === "MultiPolygon") {
+                                const allRings = [];
+                                feature.geometry.coordinates.forEach(polygonCoords => {
+                                    polygonCoords.forEach(ring => {
+                                        allRings.push(ring.map(coord => [coord[0], coord[1]]));
+                                    });
+                                });
+                                polygon = new Polygon({
+                                    rings: allRings,
+                                    spatialReference: { wkid: 4326 } // US states are in WGS84
+                                });
+                            }
+
+                            const popupTemplate = new PopupTemplate({
+                                title: mapping.displayName,
+                                content: `
+                                    <div style="padding: 10px;">
+                                        <p><strong>Students:</strong> ${studentCount}</p>
+                                        <p><strong>Location:</strong> ${mapping.displayName}</p>
+                                        <p><strong>Percentage:</strong> ${((studentCount / studentData.length) * 100).toFixed(1)}% of total</p>
+                                    </div>
+                                `
+                            });
+
+                            const graphic = new Graphic({
+                                geometry: polygon,
+                                symbol: getFillSymbol(mapping.displayName),
+                                popupTemplate: popupTemplate,
+                                attributes: {
+                                    name: mapping.displayName,
+                                    state: stateName,
+                                    students: studentCount
+                                }
+                            });
+
+                            northAmericaStatesLayer.add(graphic);
+                        }
+                    });
+
+                    // Add special boundaries to North America map (DC and Mexico)
+                    specialBoundaries.forEach(boundary => {
+                        let studentCount;
+                        if (boundary.studentKey === 'Washington') {
+                            studentCount = regionCounts['Washington, D.C.'] || 0;
+                        } else if (boundary.studentKey === 'Mexico City') {
+                            studentCount = regionCounts['Mexico City, Mexico'] || 0;
+                        }
+                        
+                        const polygon = new Polygon({
+                            rings: boundary.coordinates,
+                            spatialReference: { wkid: 4326 }
+                        });
+
+                        const popupTemplate = new PopupTemplate({
+                            title: boundary.displayName,
+                            content: `
+                                <div style="padding: 10px;">
+                                    <p><strong>Students:</strong> ${studentCount}</p>
+                                    <p><strong>Location:</strong> ${boundary.displayName}</p>
+                                    <p><strong>Percentage:</strong> ${((studentCount / studentData.length) * 100).toFixed(1)}% of total</p>
+                                    ${boundary.displayName === 'Mexico' ? '<p><em>International students</em></p>' : ''}
+                                </div>
+                            `
+                        });
+
+                        const graphic = new Graphic({
+                            geometry: polygon,
+                            symbol: getFillSymbol(boundary.displayName),
+                            popupTemplate: popupTemplate,
+                            attributes: {
+                                name: boundary.displayName,
+                                students: studentCount
+                            }
+                        });
+
+                        northAmericaStatesLayer.add(graphic);
+                    });
+
+                    // Update statistics
+                    const caStudents = Object.values(caRegionCounts).reduce((a, b) => a + b, 0);
+                    const mexicoCount = regionCounts['Mexico City, Mexico'] || 0;
+                    const otherStates = studentData.length - caStudents - mexicoCount;
+                    
+                    document.getElementById('total-students').textContent = studentData.length;
+                    document.getElementById('ca-students').textContent = `${caStudents} (${((caStudents/studentData.length)*100).toFixed(1)}%)`;
+                    document.getElementById('bay-area-students').textContent = `${caRegionCounts['Bay Area']} (${((caRegionCounts['Bay Area']/studentData.length)*100).toFixed(1)}%)`;
+                    document.getElementById('la-students').textContent = `${caRegionCounts['Los Angeles']} (${((caRegionCounts['Los Angeles']/studentData.length)*100).toFixed(1)}%)`;
+                    document.getElementById('other-states').textContent = `${otherStates} (${((otherStates/studentData.length)*100).toFixed(1)}%)`;
+                    document.getElementById('international').textContent = `${mexicoCount} (${((mexicoCount/studentData.length)*100).toFixed(1)}%)`;
+                    document.getElementById('total-regions').textContent = Object.keys(regionCounts).length;
+
+                    // Initially show North America map to be hidden, CA map visible
+                    northAmericaStatesLayer.visible = false;
+                    californiaCountiesLayer.visible = true;
+                    
+                    // Create initial labels for CA map
+                    createLabels('ca');
 
                     // Hide loading indicator
                     document.getElementById('loading').style.display = 'none';
@@ -768,14 +814,15 @@
                 view.container.style.cursor = 'default';
             });
 
+            // Add toggle button event listeners
+            document.getElementById('caMapBtn').addEventListener('click', () => switchMap('ca'));
+            document.getElementById('naMapBtn').addEventListener('click', () => switchMap('na'));
+
             // Initialize map
             view.when(() => {
                 loadMapData().then(() => {
-                    // Adjust view to show California
-                    view.goTo({
-                        center: [-119, 37],
-                        zoom: 6
-                    });
+                    // Start with California map
+                    switchMap('ca');
                 });
             });
         });
