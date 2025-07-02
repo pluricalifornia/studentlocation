@@ -405,7 +405,7 @@
                             );
                             polygon = new Polygon({
                                 rings: rings,
-                                spatialReference: { wkid: 3857 }
+                                spatialReference: { wkid: 4326 } // Use WGS84 to match source data
                             });
                         } else if (feature.geometry.type === "MultiPolygon") {
                             // For MultiPolygon, we need to flatten the structure
@@ -417,7 +417,7 @@
                             });
                             polygon = new Polygon({
                                 rings: allRings,
-                                spatialReference: { wkid: 3857 }
+                                spatialReference: { wkid: 4326 } // Use WGS84 to match source data
                             });
                         }
 
@@ -472,7 +472,7 @@
                             });
                             caPolygon = new Polygon({
                                 rings: allRings,
-                                spatialReference: { wkid: 3857 }
+                                spatialReference: { wkid: 4326 } // Use WGS84 to match source data
                             });
                         }
 
@@ -510,16 +510,17 @@
                             
                             let polygon;
 
-                            // Handle both Polygon and MultiPolygon geometries
+                            // Handle both Polygon and MultiPolygon geometries (same as CA counties)
                             if (feature.geometry.type === "Polygon") {
                                 const rings = feature.geometry.coordinates.map(ring => 
                                     ring.map(coord => [coord[0], coord[1]])
                                 );
                                 polygon = new Polygon({
                                     rings: rings,
-                                    spatialReference: { wkid: 3857 }
+                                    spatialReference: { wkid: 4326 } // Use WGS84 like the source data
                                 });
                             } else if (feature.geometry.type === "MultiPolygon") {
+                                // For MultiPolygon, we need to flatten the structure
                                 const allRings = [];
                                 feature.geometry.coordinates.forEach(polygonCoords => {
                                     polygonCoords.forEach(ring => {
@@ -528,7 +529,7 @@
                                 });
                                 polygon = new Polygon({
                                     rings: allRings,
-                                    spatialReference: { wkid: 3857 }
+                                    spatialReference: { wkid: 4326 } // Use WGS84 like the source data
                                 });
                             }
 
@@ -539,6 +540,7 @@
                                         <p><strong>Students:</strong> ${studentCount}</p>
                                         <p><strong>Location:</strong> ${mapping.displayName}</p>
                                         <p><strong>Percentage:</strong> ${((studentCount / studentData.length) * 100).toFixed(1)}% of total</p>
+                                        <p><strong>Geometry:</strong> ${feature.geometry.type}</p>
                                     </div>
                                 `
                             });
