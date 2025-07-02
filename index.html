@@ -497,13 +497,16 @@
                         const mapping = stateMapping[stateName];
                         
                         if (mapping) {
-                            // Find student count for this state
+                            // Find student count for this state with exact matching
                             const studentCount = Object.entries(regionCounts).reduce((count, [region, students]) => {
-                                if (region.includes(mapping.studentKey)) {
+                                const regionKey = `${mapping.studentKey}, ${stateName === 'Washington' ? 'WA' : stateName === 'Colorado' ? 'CO' : 'MN'}`;
+                                if (region === regionKey) {
                                     return count + students;
                                 }
                                 return count;
                             }, 0);
+                            
+                            console.log(`State: ${stateName}, Looking for: ${mapping.studentKey}, Found: ${studentCount} students`);
                             
                             let polygon;
 
@@ -540,30 +543,36 @@
                                 `
                             });
 
-                            const graphic = new Graphic({
-                                geometry: polygon,
-                                symbol: getFillSymbol(mapping.displayName),
-                                popupTemplate: popupTemplate,
-                                attributes: {
-                                    name: mapping.displayName,
-                                    state: stateName,
-                                    students: studentCount
-                                }
-                            });
+                            if (studentCount > 0) {
+                                const graphic = new Graphic({
+                                    geometry: polygon,
+                                    symbol: getFillSymbol(mapping.displayName),
+                                    popupTemplate: popupTemplate,
+                                    attributes: {
+                                        name: mapping.displayName,
+                                        state: stateName,
+                                        students: studentCount
+                                    }
+                                });
 
-                            statesLayer.add(graphic);
+                                statesLayer.add(graphic);
+                                console.log(`Added state boundary for ${mapping.displayName} with ${studentCount} students`);
+                            }
                         }
                     });
 
                     // Add special boundaries (DC and Mexico)
                     specialBoundaries.forEach(boundary => {
-                        // Find student count for this location
+                        // Find student count for this location with exact matching
                         const studentCount = Object.entries(regionCounts).reduce((count, [region, students]) => {
-                            if (region.includes(boundary.studentKey)) {
+                            const expectedKey = boundary.studentKey === 'Washington' ? 'Washington, D.C.' : 'Mexico City, Mexico';
+                            if (region === expectedKey) {
                                 return count + students;
                             }
                             return count;
                         }, 0);
+                        
+                        console.log(`Special boundary: ${boundary.displayName}, Looking for: ${boundary.studentKey}, Found: ${studentCount} students`);
                         
                         const polygon = new Polygon({
                             rings: boundary.coordinates
@@ -581,17 +590,20 @@
                             `
                         });
 
-                        const graphic = new Graphic({
-                            geometry: polygon,
-                            symbol: getFillSymbol(boundary.displayName),
-                            popupTemplate: popupTemplate,
-                            attributes: {
-                                name: boundary.displayName,
-                                students: studentCount
-                            }
-                        });
+                        if (studentCount > 0) {
+                            const graphic = new Graphic({
+                                geometry: polygon,
+                                symbol: getFillSymbol(boundary.displayName),
+                                popupTemplate: popupTemplate,
+                                attributes: {
+                                    name: boundary.displayName,
+                                    students: studentCount
+                                }
+                            });
 
-                        statesLayer.add(graphic);
+                            statesLayer.add(graphic);
+                            console.log(`Added special boundary for ${boundary.displayName} with ${studentCount} students`);
+                        }
                     });
 
                     // Update statistics
@@ -658,12 +670,20 @@
                         const displayName = location.displayName;
                         const studentKey = location.studentKey;
                         
-                        const studentCount = Object.entries(regionCounts).reduce((count, [region, students]) => {
-                            if (region.includes(studentKey)) {
-                                return count + students;
-                            }
-                            return count;
-                        }, 0);
+                        let studentCount;
+                        if (location.studentKey === 'Washington') {
+                            // Special handling for Washington D.C.
+                            studentCount = regionCounts['Washington, D.C.'] || 0;
+                        } else if (location.studentKey === 'Mexico City') {
+                            // Special handling for Mexico
+                            studentCount = regionCounts['Mexico City, Mexico'] || 0;
+                        } else {
+                            // Handle states with proper state abbreviations
+                            const stateAbbrev = studentKey === 'Washington State' ? 'WA' : 
+                                              studentKey === 'Colorado State' ? 'CO' : 'MN';
+                            const expectedKey = `${studentKey}, ${stateAbbrev}`;
+                            studentCount = regionCounts[expectedKey] || 0;
+                        }
 
                         if (studentCount > 0 && regionCenters[displayName]) {
                             const center = regionCenters[displayName];
